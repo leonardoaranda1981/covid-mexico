@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>COVID-19 en México</title>
+<meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
+<script src="https://api.mapbox.com/mapbox-gl-js/v1.9.1/mapbox-gl.js"></script>
+<link href="https://api.mapbox.com/mapbox-gl-js/v1.9.1/mapbox-gl.css" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css?family=Montserrat:100,200,300,400,500,600,700,800,900&display=swap" rel="stylesheet"> 
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+<link rel="stylesheet" type="text/css" href="style.css">
+</head>
+<body>
+
+<div id="map"></div>
+<h1 id='titulo'>COVID-19 | México</h1>
+<a id='acerca' href="acerca.html">Acerca</a>
+<a id='logoMedialab' href="http://medialabmx.org/"><img src="logoMedialab.svg"></a>
+<p id='actualizacion'>Última actualzación: 26/04/2020</p>
+<div id="loader">
+      <div id= "loaderContents">
+        <div class="loaderCircle"></div>
+        <p id="loaderText">Cargando...</p>
+      </div>
+</div>
+<button id='btn_municipios' onclick="ocultaIncidencias();">Municipios</button>&nbsp;
+<button id='btn_casos' onclick="ocultaMunicipios();">Casos</button>
+<script>
+	var loader = document.getElementById('loader');
+	var loaderText = document.getElementById('loaderText');
+	loaderText.innerHTML = 'Cargando municipios...'
+	var visibilidadMunicipios = true; 
+	var visibilidadIncidencias = false; 
+	var municipiosCargados = false; 
+	var incidenciasCargadas = false; 
+	var modo = 0; 
+	var numEntidad = 1; 
+	var totalIncidencias = 0; 
+	var id_layer = 0;
+	var id_layer_inc = 0; 
+	var municipiosPorEntidad = 0; 
+	var contadorMunicipios = 0; 
+	var maxEntidades = 32; 
+	var minIncidencias = 0; 
+	var maxIncidencias = 1000; 
+	var cargandoMunicipios = true; 
+	var cargandoIncidencias = false; 
+	var urljsonMunicipios = 'http://medialabmx.org/covid-19/geojsonMunicipios.php?edo=';
+	var urljsonIncidencias = 'http://medialabmx.org/covid-19/geojsonIncidencias.php?min=';
+	var listaLayersMunicipios = [];
+	var listaLayersIncidencias = [];
+
+	mapboxgl.accessToken = 'pk.eyJ1IjoibGVvbmFyZG9tZWRpYWxhYiIsImEiOiJjamt6NTEyeGswcWZ6M3dxdG1vaHVwaXFzIn0.MtXPXiVm7YDfUKt3vm4_dQ';
+	var map = new mapboxgl.Map({
+		container: 'map', // container id
+		style: 'mapbox://styles/leonardomedialab/ck97vv7jx43pc1io57bpmz4r7', // stylesheet location
+		center: [-99.1016627, 18.72], // starting position [lng, lat]
+		zoom: 9, // starting zoom
+		attributionControl: false
+	});
+	map.addControl(new mapboxgl.NavigationControl({compact:true}), 'bottom-right');
+	map.addControl(new mapboxgl.AttributionControl({
+        compact: true
+    }), 'bottom-right');
+	map.fitBounds([   
+		[-117.12776, 14.5388286402],
+		[-86.811982388, 32.72083]
+	]);
+	map.on('load', function() {
+
+		totalMunicipios();
+		
+		
+	}
+	);
+	map.on('sourcedata', sourceCallback);
+	function creaCapa(){
+			console.log(urljsonMunicipios+numEntidad+'&contmunicipio='+contadorMunicipios);
+			listaLayersMunicipios.push('id'+id_layer);
+			map.addSource('id'+id_layer, {
+		      type: 'geojson',
+		      data: urljsonMunicipios+numEntidad+'&contmunicipio='+contadorMunicipios
+		    });
+		    map.addLayer({
+		            'id': 'id'+id_layer,
+		            'type': 'fill',
+		            'source': 'id'+id_layer, 
+		            "layout": {
+		            	'visibility': 'visible'
+
+		             }, 
+		            'paint':{
+		               	'fill-outline-color': 'rgba(127,127,127, .5)',
+                	'fill-color': 
+	                //'#000000'
+	                    ['interpolate',
+	                    ['linear'],
+	                    ['number',['get', 'total']],
+	                    0, '#2c4c62',
+	                    25, '#888943',
+	                    50,'#e89943',
+	                    75,'#e76932',
+	                    100, '#e02636'],
+	                'fill-opacity': 1
+			            }
+		   			}, 'admin-1-boundary'	   			
+	   		);	
+
+	}
+	function cargaIncidencias(){
+		cuentaTotalIncidencias();
+
+	}
+	function creaCapaIncidencias(){
+		console.log("entrando a funcion crea capa Incidencias");
+		listaLayersIncidencias.push('id_inc'+id_layer_inc);
+		map.addSource('id_inc'+id_layer_inc, {
+	      type: 'geojson',
+	      data: 'http://medialabmx.org/covid-19/geojsonIncidencias.php?min='+minIncidencias+'&max='+maxIncidencias
+	    });
+	    map.addLayer({
+            'id': 'id_inc'+id_layer_inc,
+            'type': 'symbol',
+            'source': 'id_inc'+id_layer_inc, 
+            "layout": {
+              "icon-image": "{icon}",
+              "icon-size": .5,
+              "icon-allow-overlap": true,
+              "icon-ignore-placement":true,
+              'visibility': 'visible'
+            }
+    	}, 'admin-1-boundary');
+	}
+
+	function cuentaTotalIncidencias(){
+			$.ajax({
+			url:'cuentaIncidencias.php',
+			method:'POST',
+			data:{
+			    
+            },
+			success:function(data){
+				console.log("sucess!"+data);
+				totalIncidencias = data; 
+			    creaCapaIncidencias();
+			}
+			});
+	}
+	function sourceCallback() {
+		//console.log("hola source");
+    // assuming 'map' is defined globally, or you can use 'this'
+    	if(cargandoMunicipios == true){
+		    if (map.getSource('id'+id_layer) && map.isSourceLoaded('id'+id_layer)) {
+		    	id_layer++;
+		    	//console.log("entidad:"+numEntidad+", municipiosPorEntidad:"+municipiosPorEntidad+" , contadorMunicipios:"+contadorMunicipios );
+		    	if(contadorMunicipios+50 < municipiosPorEntidad){
+		    		contadorMunicipios+=50; 
+		    		creaCapa();
+		    	}else{
+		    		if(numEntidad<maxEntidades){
+			        	numEntidad++;
+			        	contadorMunicipios = 0; 
+			        	totalMunicipios();       	
+			        }else{
+			        	municipiosCargados = true; 
+			        	cargandoMunicipios = false; 
+			        	creaAccionesMunicipios(); 
+			        	loader.style.visibility = 'hidden';
+
+			        }
+		    	}
+		    }
+		}else if(cargandoIncidencias == true){
+
+			
+			if (map.getSource('id_inc'+id_layer_inc) && map.isSourceLoaded('id_inc'+id_layer_inc)) {
+				id_layer_inc++;
+				if(maxIncidencias < totalIncidencias ){
+					minIncidencias+=1000;
+					maxIncidencias+=1000;
+					creaCapaIncidencias();
+				}else{
+					cargandoIncidencias = false; 
+					incidenciasCargadas = true; 
+					visibilidadIncidencias = true; 
+					creaAccionesIncidencias();
+					loader.style.visibility = 'hidden';
+				}
+
+
+
+			}
+
+		}    
+	}
+	function creaAccionesMunicipios(){
+
+		for (var i = 0; i < listaLayersMunicipios.length; i++) {
+			map.on('mouseenter', listaLayersMunicipios[i], function () {
+				map.getCanvas().style.cursor = 'pointer';
+			});
+			map.on('mouseleave', listaLayersMunicipios[i], function () {
+				map.getCanvas().style.cursor = '';
+			});
+			map.on('click', listaLayersMunicipios[i], function (e) {
+			var nombre = e.features[0].properties.nombre; 
+			var positivos = e.features[0].properties.total; 
+			var negativos = e.features[0].properties.negativos; 
+			var pendientes = e.features[0].properties.pendientes; 
+			var ambulatorios = e.features[0].properties.ambulatorios; 
+			var hospitalizados = e.features[0].properties.hospitalizados; 
+			var defunciones = e.features[0].properties.defunciones; 
+			//var coordinates = e.features[0].geometry.coordinates.slice();
+			//var nota = e.features[0].properties.url;
+			//var relato = e.features[0].properties.relato;
+			var textoHtml = nombre+'<br>Positivos:'+positivos+'<br>Negativos: '+negativos+'<br>Pendientes: '+pendientes+'<br>Ambulatorios: '+ambulatorios+'<br>Hospitalizados: '+hospitalizados+'<br>Defunciones: '+defunciones;
+			// Ensure that if the map is zoomed out such that multiple
+			// copies of the feature are visible, the popup appears
+			// over the copy being pointed to.
+			 
+			new mapboxgl.Popup()
+			.setLngLat(e.lngLat)
+			.setHTML(textoHtml)
+			.addTo(map);
+			});
+			
+		}
+	}
+	function creaAccionesIncidencias(){
+		for (var i = 0; i < listaLayersIncidencias.length; i++) {
+			map.on('mouseenter', listaLayersIncidencias[i], function () {
+				map.getCanvas().style.cursor = 'pointer';
+			});
+			map.on('mouseleave', listaLayersIncidencias[i], function () {
+				map.getCanvas().style.cursor = '';
+			});
+			map.on('click', listaLayersIncidencias[i], function (e) {
+				
+			var tipo = e.features[0].properties.icon; 
+			if(tipo == 'pendiente'){
+				tipo = 'Pendiente'
+			}
+			if(tipo == 'negativo'){
+				tipo = 'Negativo'
+			}
+			if(tipo == 'positivo_ambulatorio'){
+				tipo = 'Ambulatorio'
+			}
+			if(tipo == 'positivo_hospitalizado'){
+				tipo = 'Hospitalizado'
+			}
+			if(tipo == 'positivo_difunto'){
+				tipo = 'Difunto'
+			}
+			if(tipo == 'positivo_intubado'){
+				tipo = 'Intubado'
+			}
+			var sexo = e.features[0].properties.sexo; 
+			var edad = e.features[0].properties.edad; 
+			var embarazo = e.features[0].properties.embarazo; 
+			var diabetes = e.features[0].properties.diabetes; 
+			var epoc = e.features[0].properties.epoc; 
+			var asma = e.features[0].properties.asma; 
+			var inmunosupresion = e.features[0].properties.inmunosupresion; 
+			var hipertension = e.features[0].properties.hipertension; 
+			var cardiovascular = e.features[0].properties.cardiovascular; 
+			var obesidad = e.features[0].properties.obesidad; 
+			var renal = e.features[0].properties.renal; 
+			var tabaquismo = e.features[0].properties.tabaquismo; 
+			//var coordinates = e.features[0].geometry.coordinates.slice();
+			//var nota = e.features[0].properties.url;
+			//var relato = e.features[0].properties.relato;*/
+			//var textoHtml = "prueba";
+			var textoHtml = 'Tipo de caso:'+tipo+'<br>Sexo:'+sexo+'<br>Edad: '+edad+'<br>Embarazo: '+embarazo+'<br>Diabetes: '+diabetes+'<br>Epoc: '+epoc+'<br>Asma: '+asma+'<br>Inmunosupresión: '+inmunosupresion+'<br>Hipertensión: '+hipertension+'<br>Cadivascular: '+cardiovascular+'<br>Obesidad: '+obesidad+'<br>Renal: '+renal+'<br>Tabaquismo: '+tabaquismo;
+			// Ensure that if the map is zoomed out such that multiple
+			// copies of the feature are visible, the popup appears
+			// over the copy being pointed to.
+			 
+			new mapboxgl.Popup()
+			.setLngLat(e.lngLat)
+			.setHTML(textoHtml)
+			.addTo(map);
+			});
+
+		}
+	}
+	function totalMunicipios(){
+		$.ajax({
+			url:'cuentaMunicipios.php',
+			method:'POST',
+			data:{
+			    entidad:numEntidad
+            },
+			success:function(data){
+				//console.log("sucess!"+data);
+			    municipiosPorEntidad = data; 
+			    creaCapa();
+			}
+			});
+
+	}
+	function ocultaMunicipios(){
+		loader.style.visibility = 'visible';
+		loaderText.innerHTML = 'Cargando casos...'
+		if(visibilidadMunicipios == true && municipiosCargados == true){
+			for (var i = 0; i < listaLayersMunicipios.length; i++) {
+				var visibility = map.getLayoutProperty(listaLayersMunicipios[i], 'visibility');
+				if (visibility === 'visible') {
+					map.setLayoutProperty(listaLayersMunicipios[i], 'visibility', 'none');
+				}
+			}
+			visibilidadMunicipios = false; 
+			visibilizaIncidencias();
+		}else{
+			loader.style.visibility = 'hidden';
+		}
+
+
+	}
+	
+	function ocultaIncidencias(){
+		loader.style.visibility = 'visible';
+		loaderText.innerHTML = 'Cargando municipios...'
+		if(visibilidadIncidencias == true && incidenciasCargadas == true){
+			for (var i = 0; i < listaLayersIncidencias.length; i++) {
+				var visibility = map.getLayoutProperty(listaLayersIncidencias[i], 'visibility');
+				if (visibility === 'visible') {
+					map.setLayoutProperty(listaLayersIncidencias[i], 'visibility', 'none');
+				}
+
+			}
+			visibilidadIncidencias = false; 
+			visibilizaMunicipios();
+
+		}else{
+			loader.style.visibility = 'hidden';
+		}
+	}
+	function visibilizaIncidencias(){
+		if(incidenciasCargadas == true){
+			if(visibilidadIncidencias == false){
+				for (var i = 0; i < listaLayersIncidencias.length; i++) {
+					var visibility = map.getLayoutProperty(listaLayersIncidencias[i], 'visibility');
+					if (visibility === 'none') {
+						map.setLayoutProperty(listaLayersIncidencias[i], 'visibility', 'visible');
+					}
+
+				}
+				visibilidadIncidencias = true; 
+				loader.style.visibility = 'hidden';
+			}
+		}else{
+			loaderText.innerHTML = 'Cargando casos...'
+			cargandoIncidencias = true; 
+
+			cargaIncidencias();
+		}
+	}
+	function visibilizaMunicipios(){
+		if(municipiosCargados == true){
+			if(visibilidadMunicipios == false){
+				for (var i = 0; i < listaLayersMunicipios.length; i++) {
+					var visibility = map.getLayoutProperty(listaLayersMunicipios[i], 'visibility');
+					if (visibility === 'none') {
+						map.setLayoutProperty(listaLayersMunicipios[i], 'visibility', 'visible');
+					}
+				}
+				visibilidadMunicipios = true;
+				loader.style.visibility = 'hidden';
+
+			}
+		}
+	}
+</script>
+ 
+</body>
+</html>

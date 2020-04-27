@@ -1,0 +1,207 @@
+body { 
+	margin: 0; 
+	padding: 0;
+}
+#titulo{
+	position: absolute;
+	font-family: 'Montserrat', sans-serif;
+	font-weight: 600;
+	color: white; 
+	text-shadow: 0 0 1px #000;
+	line-height: 1.8vw;
+	width: 25vw; 
+	font-size: 2.4vw;
+	left: 1.5vw;
+	top: .9vw;
+	z-index: 3;
+
+}
+#titulo2{
+	
+	font-family: 'Montserrat', sans-serif;
+	font-weight: 600;
+	color: black; 
+	
+	 
+	font-size: 24pt;
+	
+	
+}
+.acerca{
+	font-family: 'Montserrat', sans-serif;
+	margin-right: 20vw; 
+	margin-left:20vw; 
+	margin-top:10vh;
+	margin-bottom: 10vh; 
+}
+.acerca p{
+	text-align: justify;
+	font-size: 12pt;
+	line-height: 15pt;
+}
+.acerca a{
+	
+	font-style: italic;
+	color: black;
+}
+#acerca{
+	font-family: 'Montserrat', sans-serif;
+	font-weight: 600;
+	color: white; 
+	text-shadow: 0 0 1px #000;
+	position: absolute;
+	font-size: 1.8vw;
+	z-index: 3;
+	right: 1.5vw;
+	top: .9vw;
+	text-decoration: none;
+}
+#actualizacion{
+	position: absolute;
+	text-align: center;
+	align-content: center;
+	font-size: 1.2vw; 
+	left: 1.5vw;
+	top: 7.5vw; 
+	font-family: 'Montserrat', sans-serif;
+	font-weight: 300;
+	color: white; 
+	text-shadow: 0 0 1px #000;
+	z-index:5; 
+}
+#logoMedialab{
+	position: absolute;
+	bottom:35px;
+	left:10px;
+	width:50px;
+	z-index: 3;
+}
+#logoMedialab img{
+	width: 100%;
+	height: auto; 
+}
+button{
+	z-index: 1;
+	background-color: rgba(255,255,255, .65); 
+	font-size: 1.2vw;
+	font-weight: 600;
+	line-height: 1.2vw;
+	z-index: 1;
+	right: 1.5vw;
+	top: .9vw;
+}
+
+#map { 
+	position: absolute; 
+	top: 0; 
+	bottom: 0; 
+	width: 100%; 
+	z-index: -1;
+}
+#btn_municipios{
+	position: absolute;
+	font-family: 'Montserrat', sans-serif;
+	color:black;
+	font-weight: 400; 
+	width: 10vw; 
+	 
+	left:1.5vw;
+	top:6vw;
+}
+#btn_casos{
+	position: absolute;
+	font-family: 'Montserrat', sans-serif;	
+	color:black;
+	font-weight: 400; 
+	width: 10vw; 
+	left:13vw;
+	top: 6vw;
+}
+#loaderContents{
+    position: absolute; 
+    height: 100%;
+    width: 10%;
+    left: 45%;
+
+}
+#loader{
+    position: absolute;
+    background-color: rgba(0,0,0, 0.4);
+    width: 100%;
+    height: 100%;
+    z-index: 2;
+}
+#loaderText {
+font-family: 'Montserrat', sans-serif;
+font-weight: 600;
+size: 1.2vw;
+  text-align: center;
+  color:white;
+  text-shadow: 0 0 1px #000;
+  position: absolute;
+   
+  
+  width: 100%;
+  top: 55vh;
+  justify-content: center; 
+}
+.loaderCircle {
+    border: 4px solid #cecece; /* Light grey */
+    border-top: 4px solid #3498db; /* Blue */
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    margin: -25px 0 0 -25px;
+    animation: spin 2s linear infinite;
+   position: absolute;
+    top: 50%;
+    left: 50%;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+.mapboxgl-popup {
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 400; 
+  font-size: 15px/22px;
+  padding: 10px;
+  
+  width: 20vw;
+  
+ 
+
+
+}
+.mapboxgl-popup-tip{
+	
+	border-top-color: rgba(255, 255, 255,.25) !important;
+	padding-bottom: 8px; 
+
+}
+.mapboxgl-popup-content {
+  
+
+ padding: 10px;
+ max-height: 25vh;
+ overflow: auto; 
+ background-color: rgba(255, 255, 255, .75);
+ font-size: 1vw;
+
+
+}
+.mapboxgl-popup-content a {
+  
+font-weight: 800; 
+text-decoration: none;
+font-weight: 400; 
+color: #000000;
+
+
+}
+.mapboxgl-popup-content-wrapper {
+  
+
+bottom: 10px; 
+}
